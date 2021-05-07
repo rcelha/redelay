@@ -1,0 +1,19 @@
+[package]
+name = "redis-delay"
+version = "0.1.0"
+authors = ["Rodrigo Corrêa <rcelha@gmail.com>"]
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib"]
+name = "redelay"
+
+[dependencies]
+libc = "0.2"
+redis-module = { version = "0.15.0", features = ["experimental-api"]}
+uuid = { version = "0.8", features = ["v4"] }
+skiplist = "0.3"
+
+[features]
+# https://github.com/RedisLabsModules/redismodule-rs/pull/68
+test = ["redis-module/test"]
