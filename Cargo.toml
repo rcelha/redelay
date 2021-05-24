@@ -14,6 +14,10 @@ redis-module = { version = "0.15.0", features = ["experimental-api"]}
 uuid = { version = "0.8", features = ["v4"] }
 skiplist = "0.3"
 
+[dev-dependencies]
+redis = "0.20"
+
 [features]
 # https://github.com/RedisLabsModules/redismodule-rs/pull/68
 test = ["redis-module/test"]
+integration_tests = ["redis-module/test"]
