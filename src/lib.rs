@@ -8,6 +8,7 @@ use std::vec::Vec;
 mod data_types;
 use data_types::*;
 mod commands;
+pub mod skiplist_ext;
 
 // Extracts the embeded commands from a task and execute it
 //
@@ -99,6 +100,31 @@ fn update_timer(
     schedule.timer_id = Some(new_timer_id);
 }
 
+fn event_is_restore(event_type: redis_module::NotifyEvent, event: &str) -> bool {
+    // TODO wait for loaded support:
+    // (event_type == redis_module::NotifyEvent::GENERIC && event == "restore")
+    //    || (event_type == redis_module::NotifyEvent::LOADED && event == "loaded")
+    event_type == redis_module::NotifyEvent::GENERIC && event == "restore"
+}
+
+fn handle_rdb_loading(
+    ctx: &Context,
+    event_type: redis_module::NotifyEvent,
+    event: &str,
+    key: &str,
+) {
+    if !event_is_restore(event_type, event) {
+        return;
+    }
+
+    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+    let redis_key = ctx.open_key_writable(&key);
+
+    if let Ok(Some(value)) = redis_key.get_value::<ScheduleDataType>(&SCHEDULE_DATA_TYPE) {
+        update_timer(&ctx, key.to_string(), value, now);
+    }
+}
+
 redis_module! {
     name: "ReDelay",
     version: 1,
@@ -112,4 +138,9 @@ redis_module! {
         ["schedule.replicate", commands::replicate, "write", 1,1,1],
         ["schedule.scan", commands::scan, "readonly", 1,1,1],
     ],
+    event_handlers: [
+        // TODO wait for @LOADED support
+        // [@LOADED @GENERIC: handle_rdb_loading]
+        [@GENERIC: handle_rdb_loading]
+    ]
 }

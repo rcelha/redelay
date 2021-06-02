@@ -1,23 +1,28 @@
-use redis_module;
+use crate::skiplist_ext::{de_skiplist, ser_skiplist};
+
 use redis_module::native_types::RedisType;
 use redis_module::raw;
+use serde::{Deserialize, Serialize};
 use skiplist::OrderedSkipList;
 use std::collections::HashMap;
-use std::os::raw::c_void;
+use std::os::raw::{c_int, c_void};
 use std::vec::Vec;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Task {
     pub timestamp: u64,
     pub args: Vec<String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ScheduleDataType {
     // (Timestamp, TaskID)
+    #[serde(serialize_with = "ser_skiplist", deserialize_with = "de_skiplist")]
     timetable: OrderedSkipList<(u64, String)>,
     // TaskID : ARGV[...]
     tasks: HashMap<String, Task>,
+
+    #[serde(skip)]
     pub timer_id: Option<u64>,
 }
 
@@ -100,13 +105,27 @@ unsafe extern "C" fn free(value: *mut c_void) {
     Box::from_raw(value as *mut ScheduleDataType);
 }
 
+#[allow(non_snake_case, unused)]
+pub extern "C" fn rdb_load(rdb: *mut raw::RedisModuleIO, encver: c_int) -> *mut c_void {
+    let data = raw::load_string(rdb);
+    let schedule: ScheduleDataType = serde_json::from_str(&data).unwrap();
+    Box::into_raw(Box::new(schedule)) as *mut c_void
+}
+
+pub extern "C" fn rdb_save(rdb: *mut raw::RedisModuleIO, value: *mut c_void) {
+    let schedule = unsafe { &*(value as *mut ScheduleDataType) };
+    raw::save_string(rdb, &serde_json::to_string(&schedule).unwrap()); // TODO remove unwrap
+}
+
 pub static SCHEDULE_DATA_TYPE: RedisType = RedisType::new(
     "schedulet",
     0,
     raw::RedisModuleTypeMethods {
         version: raw::REDISMODULE_TYPE_METHOD_VERSION as u64,
-        rdb_load: None, // TODO
-        rdb_save: None, // TODO
+
+        rdb_save: Some(rdb_save),
+        rdb_load: Some(rdb_load),
+
         aof_rewrite: None,
         free: Some(free),
 
@@ -205,5 +224,17 @@ mod tests {
         assert_eq!(schedule.decr("task-b".to_string(), 5), Some(1));
         assert_eq!(schedule.get_min_timestamp(), Some(1));
         assert_eq!(schedule.len(), 2);
+    }
+
+    #[test]
+    fn serde() {
+        let mut schedule = ScheduleDataType::new();
+        schedule.add_task(10, "task-a".to_string(), vec!["A".to_string()]);
+        schedule.add_task(6, "task-b".to_string(), vec!["B".to_string()]);
+
+        let ser_schedule = serde_json::to_string(&schedule).unwrap();
+        let de_schedule: ScheduleDataType = serde_json::from_str(&ser_schedule).unwrap();
+        assert_eq!(schedule.tasks, de_schedule.tasks);
+        assert_eq!(schedule.timetable, de_schedule.timetable);
     }
 }

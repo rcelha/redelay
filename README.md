@@ -71,9 +71,11 @@ make test
 
 ## TODO
 
-- RDB support
-- Create timers after AOF restore
-- Validate commands on receive
-- Cluster support
-- Example with streams
-- Test coverage
+- [x] RDB Support
+- [ ] Create timers after AOF restore
+- [ ] Validate commands on receive
+- [ ] Cluster support
+- [ ] Fix all clippy warnings
+- [ ] Example with streams
+- [ ] Test coverage
+- [ ] Move timer create/update into event module
