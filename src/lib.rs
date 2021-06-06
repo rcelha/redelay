@@ -137,6 +137,8 @@ redis_module! {
         ["schedule.rem", commands::rem, "write", 1,1,1],
         ["schedule.replicate", commands::replicate, "write", 1,1,1],
         ["schedule.scan", commands::scan, "readonly", 1,1,1],
+        ["schedule.incrby", commands::incrby, "write", 1,1,1],
+        ["schedule.decrby", commands::decrby, "write", 1,1,1],
     ],
     event_handlers: [
         // TODO wait for @LOADED support
