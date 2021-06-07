@@ -68,22 +68,25 @@ impl ScheduleDataType {
         self.tasks.len()
     }
 
-    pub fn incr(&mut self, task_id: String, value: u64) -> Option<u64> {
+    pub fn change_timestamp_by(
+        &mut self,
+        task_id: String,
+        callback: impl Fn(u64) -> u64,
+    ) -> Option<u64> {
         let mut task = self.tasks.get_mut(&task_id)?;
         self.timetable
             .remove_first(&(task.timestamp, task_id.clone()));
-        task.timestamp += value;
+        task.timestamp = callback(task.timestamp);
         self.timetable.insert((task.timestamp, task_id));
         Some(task.timestamp)
     }
 
+    pub fn incr(&mut self, task_id: String, value: u64) -> Option<u64> {
+        self.change_timestamp_by(task_id, |x| x + value)
+    }
+
     pub fn decr(&mut self, task_id: String, value: u64) -> Option<u64> {
-        let mut task = self.tasks.get_mut(&task_id)?;
-        self.timetable
-            .remove_first(&(task.timestamp, task_id.clone()));
-        task.timestamp -= value;
-        self.timetable.insert((task.timestamp, task_id));
-        Some(task.timestamp)
+        self.change_timestamp_by(task_id, |x| x - value)
     }
 
     pub fn to_vec(&self) -> Vec<(u64, String, Vec<String>)> {
@@ -95,7 +98,7 @@ impl ScheduleDataType {
             } else {
                 Vec::new()
             };
-            ret.push((timestamp.clone(), final_task_id, args));
+            ret.push((*timestamp, final_task_id, args));
         }
         ret
     }

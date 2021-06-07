@@ -79,7 +79,7 @@ pub fn add(ctx: &Context, args: Vec<String>) -> RedisResult {
     let timestamp = now.as_secs() + delay;
     let delayed_command: Vec<String> = args.collect();
 
-    let task_id = add_task_helper(ctx, schedule_key.clone(), timestamp, delayed_command, None)?;
+    let task_id = add_task_helper(ctx, schedule_key, timestamp, delayed_command, None)?;
     Ok(RedisValue::BulkString(task_id))
 }
 
@@ -150,6 +150,64 @@ pub fn scan(ctx: &Context, args: Vec<String>) -> RedisResult {
                 })
                 .collect();
             Ok(RedisValue::Array(ret))
+        }
+        None => Ok(RedisValue::Null),
+    }
+}
+
+///
+/// SCHEDULE.INCRBY KEY TASK-ID SECONDS
+///
+pub fn incrby(ctx: &Context, args: Vec<String>) -> RedisResult {
+    ctx.log_notice(format!("[schedule.incrby]: {:?}", args).as_str());
+    let now = SystemTime::now().duration_since(UNIX_EPOCH)?;
+
+    let mut args = args.into_iter().skip(1);
+    let schedule_key = args.next_string()?;
+    let task_id = args.next_string()?;
+    let inc_size = args.next_u64()?;
+    let key = ctx.open_key_writable(&schedule_key);
+
+    match key.get_value::<ScheduleDataType>(&SCHEDULE_DATA_TYPE)? {
+        Some(value) => {
+            let new_timestamp = value.incr(task_id, inc_size);
+            ctx.replicate_verbatim();
+            match new_timestamp {
+                Some(new_timestamp) => {
+                    update_timer(&ctx, schedule_key, value, now);
+                    Ok(RedisValue::BulkString(new_timestamp.to_string()))
+                }
+                _ => Ok(RedisValue::Null),
+            }
+        }
+        None => Ok(RedisValue::Null),
+    }
+}
+
+///
+/// SCHEDULE.DECRBY KEY TASK-ID SECONDS
+///
+pub fn decrby(ctx: &Context, args: Vec<String>) -> RedisResult {
+    ctx.log_notice(format!("[schedule.decrby]: {:?}", args).as_str());
+    let now = SystemTime::now().duration_since(UNIX_EPOCH)?;
+
+    let mut args = args.into_iter().skip(1);
+    let schedule_key = args.next_string()?;
+    let task_id = args.next_string()?;
+    let inc_size = args.next_u64()?;
+    let key = ctx.open_key_writable(&schedule_key);
+
+    match key.get_value::<ScheduleDataType>(&SCHEDULE_DATA_TYPE)? {
+        Some(value) => {
+            let new_timestamp = value.decr(task_id, inc_size);
+            ctx.replicate_verbatim();
+            match new_timestamp {
+                Some(new_timestamp) => {
+                    update_timer(&ctx, schedule_key, value, now);
+                    Ok(RedisValue::BulkString(new_timestamp.to_string()))
+                }
+                _ => Ok(RedisValue::Null),
+            }
         }
         None => Ok(RedisValue::Null),
     }
