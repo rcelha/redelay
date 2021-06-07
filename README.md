@@ -2,7 +2,7 @@
 
 Schedule commands in Redis.
 
-⚠️ *This is a work in progress* ⚠️
+⚠️ _This is a work in progress_ ⚠️
 
 ## Example
 
@@ -25,11 +25,11 @@ List all the tasks (id, timestamp, command) present in a schedule (do not includ
 
 ### SCHEDULE.INCRBY KEY TASK-ID SECONDS
 
-`TODO`
+Delay a task even further
 
 ### SCHEDULE.DECRBY KEY TASK-ID SECONDS
 
-`TODO`
+Speed up a task
 
 ### SCHEDULE.REPLICATE KEY TIMESTAMP TASK-ID COMMAND [ARG ...]
 
@@ -72,10 +72,11 @@ make test
 ## TODO
 
 - [x] RDB Support
-- [ ] Create timers after AOF restore
 - [ ] Validate commands on receive
 - [ ] Cluster support
-- [ ] Fix all clippy warnings
-- [ ] Example with streams
 - [ ] Test coverage
+- [x] Fix all clippy warnings
+- [ ] Suppress clippy error from redis-module
+- [ ] Example with streams
+- [ ] Create timers after AOF restore
 - [ ] Move timer create/update into event module

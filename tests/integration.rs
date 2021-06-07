@@ -1,4 +1,20 @@
+use std::env::var;
 use std::time::Duration;
+
+fn get_redis_host() -> String {
+    var("INTEGRATION_TEST_REDIS_HOST").unwrap_or_else(|_| "127.0.0.1".to_string())
+}
+fn get_redis_port() -> String {
+    var("INTEGRATION_TEST_REDIS_PORT").unwrap_or_else(|_| "6379".to_string())
+}
+
+fn redis_conn_str() -> String {
+    format!("redis://{}:{}/", get_redis_host(), get_redis_port())
+}
+
+fn open_test_conn() -> redis::RedisResult<redis::Client> {
+    redis::Client::open(redis_conn_str())
+}
 
 #[test]
 #[cfg_attr(not(feature = "integration_tests"), ignore)]
@@ -7,7 +23,7 @@ use std::time::Duration;
 // pop item by item to test if they were inserted in the right
 // order
 fn test_populating_fifo() -> redis::RedisResult<()> {
-    let client = redis::Client::open("redis://127.0.0.1:6666/")?;
+    let client = open_test_conn()?;
     let mut con = client.get_connection()?;
 
     redis::pipe()
@@ -72,7 +88,7 @@ fn test_populating_fifo() -> redis::RedisResult<()> {
 //
 // Wait for a few seconds and expect duplicated items in the list
 fn test_rdb_support() -> redis::RedisResult<()> {
-    let client = redis::Client::open("redis://127.0.0.1:6666/")?;
+    let client = open_test_conn()?;
     let mut con = client.get_connection()?;
 
     redis::pipe()
@@ -166,7 +182,7 @@ mod incr_decr {
     #[test]
     #[cfg_attr(not(feature = "integration_tests"), ignore)]
     fn test_incr_command() -> redis::RedisResult<()> {
-        let client = redis::Client::open("redis://127.0.0.1:6666/")?;
+        let client = open_test_conn()?;
         let mut con = client.get_connection()?;
 
         cleanup(&mut con, "test-incr");
@@ -196,7 +212,7 @@ mod incr_decr {
     #[test]
     #[cfg_attr(not(feature = "integration_tests"), ignore)]
     fn test_decr_command() -> redis::RedisResult<()> {
-        let client = redis::Client::open("redis://127.0.0.1:6666/")?;
+        let client = open_test_conn()?;
         let mut con = client.get_connection()?;
 
         cleanup(&mut con, "test-decr");
