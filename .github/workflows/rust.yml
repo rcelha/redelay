@@ -26,4 +26,4 @@ jobs:
       - name: Build
         run: cargo build --verbose
       - name: Integration tests
-        run: make builder setup-integration test-integration
+        run: make builder redis-server-d test-integration
