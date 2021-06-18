@@ -80,3 +80,4 @@ make test
 - [ ] Example with streams
 - [ ] Create timers after AOF restore
 - [ ] Move timer create/update into event module
+- [ ] RDB integration tests

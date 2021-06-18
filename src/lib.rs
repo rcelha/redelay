@@ -101,10 +101,8 @@ fn update_timer(
 }
 
 fn event_is_restore(event_type: redis_module::NotifyEvent, event: &str) -> bool {
-    // TODO wait for loaded support:
-    // (event_type == redis_module::NotifyEvent::GENERIC && event == "restore")
-    //    || (event_type == redis_module::NotifyEvent::LOADED && event == "loaded")
-    event_type == redis_module::NotifyEvent::GENERIC && event == "restore"
+    (event_type == redis_module::NotifyEvent::GENERIC && event == "restore")
+        || (event_type == redis_module::NotifyEvent::LOADED && event == "loaded")
 }
 
 fn handle_rdb_loading(
@@ -141,8 +139,6 @@ redis_module! {
         ["schedule.decrby", commands::decrby, "write", 1,1,1],
     ],
     event_handlers: [
-        // TODO wait for @LOADED support
-        // [@LOADED @GENERIC: handle_rdb_loading]
-        [@GENERIC: handle_rdb_loading]
+        [@LOADED @GENERIC: handle_rdb_loading]
     ]
 }
