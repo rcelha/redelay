@@ -3,6 +3,7 @@ use crate::skiplist_ext::{de_skiplist, ser_skiplist};
 use redis_module::native_types::RedisType;
 use redis_module::raw;
 use serde::{Deserialize, Serialize};
+use skiplist::ordered_skiplist::Iter;
 use skiplist::OrderedSkipList;
 use std::collections::HashMap;
 use std::os::raw::{c_int, c_void};
@@ -53,7 +54,8 @@ impl ScheduleDataType {
             .map(|(timestamp, _task_id)| *timestamp)
     }
 
-    pub fn pop_by_timestamp(&mut self, limit: u64) -> Option<(u64, String, Vec<String>)> {
+    #[cfg(test)]
+    fn pop_by_timestamp(&mut self, limit: u64) -> Option<(u64, String, Vec<String>)> {
         let (head_timestamp, _) = self.timetable.front()?;
 
         if *head_timestamp > limit {
@@ -64,7 +66,12 @@ impl ScheduleDataType {
         Some((head_timestamp, head_task_id, task.args))
     }
 
-    pub fn len(&self) -> usize {
+    pub fn timetable_iter(&self) -> Iter<(u64, String)> {
+        self.timetable.iter()
+    }
+
+    #[cfg(test)]
+    fn len(&self) -> usize {
         self.tasks.len()
     }
 
@@ -117,7 +124,7 @@ pub extern "C" fn rdb_load(rdb: *mut raw::RedisModuleIO, encver: c_int) -> *mut 
 
 pub extern "C" fn rdb_save(rdb: *mut raw::RedisModuleIO, value: *mut c_void) {
     let schedule = unsafe { &*(value as *mut ScheduleDataType) };
-    raw::save_string(rdb, &serde_json::to_string(&schedule).unwrap()); // TODO remove unwrap
+    raw::save_string(rdb, &serde_json::to_string(&schedule).unwrap());
 }
 
 pub static SCHEDULE_DATA_TYPE: RedisType = RedisType::new(

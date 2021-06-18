@@ -35,10 +35,6 @@ Speed up a task
 
 Internal command to replicate/restore schedule from/to AOF.
 
-### SCHEDULE.UPDATE (CHANGE A CURRENT TASK WITHOUT TRIGGERING SIDE EFFECTS)
-
-Internal command to replicate/restore schedule from/to AOF.
-
 ### SCHEDULE.EXEC (CAUSES THE TASK SIDE EFFECT)
 
 Executes a task, triggering its command.
@@ -69,11 +65,18 @@ cargo t --features test
 make test
 ```
 
+## Running all integration tests (in docker)
+
+```sh
+make start-all
+```
+
 ## TODO
 
 - [x] RDB Support
-- [ ] Validate commands on receive
-- [ ] Cluster support
+- [x] Validate commands on receive
+- [x] Cluster support
+- [ ] Do not start/execute timers on replicas?
 - [ ] Test coverage
 - [x] Fix all clippy warnings
 - [ ] Suppress clippy error from redis-module
@@ -81,3 +84,6 @@ make test
 - [ ] Create timers after AOF restore
 - [ ] Move timer create/update into event module
 - [ ] RDB integration tests
+- [ ] Test for key removed
+- [ ] Test for cluster replication
+- [ ] Dead-letter

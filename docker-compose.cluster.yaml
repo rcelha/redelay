@@ -1,0 +1,34 @@
+x-redis: &redis
+  image: docker.io/bitnami/redis-cluster:6.2
+  command: ["/opt/bitnami/scripts/redis-cluster/run.sh", "--loadmodule", "/target/release/libredelay.so"]
+  volumes:
+    - ./.container_target:/target:Z
+  environment:
+    - 'ALLOW_EMPTY_PASSWORD=yes'
+    - 'REDIS_NODES=redis-node-0 redis-node-1 redis-node-2 redis-node-3 redis-node-4 redis-node-5'
+
+version: '2'
+services:
+  redis-node-0: 
+    <<: *redis
+  redis-node-1: 
+    <<: *redis
+  redis-node-2: 
+    <<: *redis
+  redis-node-3: 
+    <<: *redis
+  redis-node-4: 
+    <<: *redis
+  redis-node-5: 
+    <<: *redis
+    depends_on:
+      - redis-node-0
+      - redis-node-1
+      - redis-node-2
+      - redis-node-3
+      - redis-node-4
+    environment:
+      - 'ALLOW_EMPTY_PASSWORD=yes'
+      - 'REDIS_NODES=redis-node-0 redis-node-1 redis-node-2 redis-node-3 redis-node-4 redis-node-5'
+      - 'REDIS_CLUSTER_REPLICAS=1'
+      - 'REDIS_CLUSTER_CREATOR=yes'
