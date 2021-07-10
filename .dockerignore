@@ -3,3 +3,7 @@ linux-target/
 Makefile
 README.md
 examples/
+
+.container_target/
+.git/
+.github/
